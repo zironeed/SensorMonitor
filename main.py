@@ -3,6 +3,9 @@ import time
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import threading
+
+stop_thread = False
 
 def process_file(file, filename, output_file):
     df = pd.read_csv(file, skiprows=29, header=None, skip_blank_lines=True, sep=', ', engine='python')
@@ -15,9 +18,10 @@ def process_file(file, filename, output_file):
 
 
 def get_file(directory, output_file):
+    global stop_thread
     processed_files = set()
 
-    while True:
+    while not stop_thread:
         for filename in os.listdir(directory):
             if filename.lower().endswith('.csv') and filename not in processed_files:
                 file = os.path.join(directory, filename)
@@ -46,6 +50,8 @@ def select_output_file():
 
 
 def start():
+    global stop_thread
+    stop_thread = False
     directory = directory_entry.get()
     output_file = output_entry.get()
 
@@ -53,15 +59,19 @@ def start():
         messagebox.showwarning("Предупреждение", "Пожалуйста, выберите директорию и файл вывода.")
         return
 
-    start_processing(directory, output_file)
+    processing_thread = threading.Thread(target=start_processing, args=(directory, output_file))
+    processing_thread.start()
 
 
-# Создание основного окна
+def stop():
+    global stop_thread
+    stop_thread = True
+
+
 root = tk.Tk()
 root.title("CSV Processor")
 
-# Метки и поля ввода
-tk.Label(root, text="Выберите директорию:").grid(row=0, column=0, padx=10, pady=5)
+tk.Label(root, text="Выберите директорию мониторинга:").grid(row=0, column=0, padx=10, pady=5)
 directory_entry = tk.Entry(root, width=50)
 directory_entry.grid(row=0, column=1, padx=10, pady=5)
 tk.Button(root, text="Выбрать", command=select_directory).grid(row=0, column=2, padx=10, pady=5)
@@ -71,8 +81,8 @@ output_entry = tk.Entry(root, width=50)
 output_entry.grid(row=1, column=1, padx=10, pady=5)
 tk.Button(root, text="Выбрать", command=select_output_file).grid(row=1, column=2, padx=10, pady=5)
 
-# Кнопка для начала обработки
-tk.Button(root, text="Начать", command=start).grid(row=2, column=0, columnspan=3, pady=10)
+tk.Button(root, text="Начать", command=start).grid(row=2, column=0, pady=10)
+tk.Button(root, text="Остановить", command=stop).grid(row=2, column=1, pady=10)
 
-# Запуск главного цикла приложения
+
 root.mainloop()
