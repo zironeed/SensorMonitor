@@ -9,8 +9,7 @@ from matplotlib.animation import FuncAnimation
 
 stop_thread = False
 
-min_wavelengths = []
-min_values = []
+min_wavelengths, min_values = [], []
 
 
 def process_file(file, filename, output_file):
