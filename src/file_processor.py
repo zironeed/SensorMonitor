@@ -7,6 +7,12 @@ min_wavelengths, min_values = [], []
 
 
 def process_file(file, filename, output_file):
+    """
+    Обработка значений CSV-файла
+    :param file: полный путь к CSV-файлу
+    :param filename: имя CSV-файла
+    :param output_file: файл вывода значений
+    """
     try:
         df = pd.read_csv(file, skiprows=29, header=None, skip_blank_lines=True, sep=', ', engine='python')
         df.columns = ['Data', 'Value']
@@ -23,6 +29,11 @@ def process_file(file, filename, output_file):
 
 
 def get_file(directory, output_file):
+    """
+    Поиск файлов, обработка значений файлов и сохранение файла как обработанного
+    :param directory: папка мониторинга
+    :param output_file: файл вывода значений
+    """
     processed_files = set()
 
     while True:
