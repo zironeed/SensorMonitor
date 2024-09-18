@@ -22,12 +22,12 @@ async def process_file(path_to_files, filename, output_file):
             await reader.__anext__()
 
         async for row in reader:
-            wave.append(float(row[0]))
+            wave.append((float(row[0]), float(row[1])))
             values.append(float(row[1].strip()))
 
     async with aiofiles.open(output_file, 'a') as output:
         await output.write(f"{filename}, {wave[values.index(min(values))]}, {min(values)}\n")
-        print(filename, min(values), wave[values.index(min(values))])
+        print(filename, wave[values.index(min(values))])
 
 
 async def get_files(my_dir, output_file):
