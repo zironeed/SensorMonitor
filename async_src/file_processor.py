@@ -12,6 +12,8 @@ async def process_file(path_to_files, filename, output_file):
     skip_rows = 14
 
     async with aiofiles.open(os.path.join(path_to_files, filename), 'r') as file:
+        wave, values = [], []
+
         reader = aiocsv.AsyncReader(file)
         async for _ in reader:
             if skip_rows == 0:
@@ -20,7 +22,12 @@ async def process_file(path_to_files, filename, output_file):
             await reader.__anext__()
 
         async for row in reader:
-            print(row)
+            wave.append(float(row[0]))
+            values.append(float(row[1].strip()))
+
+    async with aiofiles.open(output_file, 'a') as output:
+        await output.write(f"{filename}, {wave[values.index(min(values))]}, {min(values)}\n")
+        print(filename, min(values), wave[values.index(min(values))])
 
 
 async def get_files(my_dir, output_file):
