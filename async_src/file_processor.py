@@ -33,4 +33,10 @@ async def get_dirs(common_dir):
     """
     Поиск папок датчиков в общей папке, передача папки в get_files
     """
-    pass
+
+    dt_dirs = [os.path.join(common_dir, d) for d in os.listdir(common_dir)
+               if os.path.isdir(os.path.join(common_dir, d))]
+
+    await asyncio.gather(*[get_files(dt_dir) for dt_dir in dt_dirs])
+
+    return 0
