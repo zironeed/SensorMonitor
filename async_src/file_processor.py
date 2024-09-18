@@ -27,10 +27,13 @@ async def get_files(my_dir, output_file):
     """
     Поиск файлов, передача их на обработку и добавление в processed_files
     """
+    processed_files = dict()
+
     while True:
         for filename in os.listdir(my_dir):
-            if filename.lower().endswith('.csv') and filename not in os.listdir('processed_files.txt'):
+            if filename.lower().endswith('.csv') and not processed_files.get(filename, False):
                 await process_file(my_dir, filename, output_file)
+                processed_files[filename] = True
         await asyncio.sleep(4)
 
 
