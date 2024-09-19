@@ -27,7 +27,6 @@ async def process_file(path_to_files, filename, output_file):
 
     async with aiofiles.open(output_file, 'a') as output:
         await output.write(f"{filename}, {wave[values.index(min(values))]}, {min(values)}\n")
-        print(filename, wave[values.index(min(values))])
 
 
 async def get_files(my_dir, output_file):
