@@ -1,3 +1,4 @@
+import os
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -15,6 +16,7 @@ class SensorMonitor(QMainWindow):
         self.setWindowTitle('Sensor Monitor')  # Устанавливаем название окна
         self.setGeometry(100, 100, 1200, 700)  # Устанавливаем размеры окна
 
+        self.sensor_dropdowns = []  # Список для хранения всех dropdown меню
         self.graphs = []  # Список для хранения графиков минимумов
         self.wave_graphs = []  # Список для хранения волновых графиков
         self.sliders = []  # Список для ползунков, чтобы связать их с графиками
@@ -43,7 +45,7 @@ class SensorMonitor(QMainWindow):
 
         # Создаем 4 блока для датчиков
         for i in range(4):
-            sensor_block = self.create_sensor_block(f"DT0{i + 1}")
+            sensor_block = self.create_sensor_block(f"Monitor {i + 1}", )
             sensors_layout.addLayout(sensor_block, i, 0)
 
         main_layout.addLayout(sensors_layout)
@@ -51,6 +53,19 @@ class SensorMonitor(QMainWindow):
         # Устанавливаем главное окно
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)  # Устанавливаем основное содержимое
+
+    def get_sensor_directories(self, directory):
+        """
+        Получаем все директории датчиков
+        :param directory: общая директория
+        :return: список названий директорий
+        """
+        return [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
+
+    def update_sensor_blocks(self):
+        for dropdown in self.sensor_dropdowns:
+            dropdown.clear()  # Очищаем предыдущее содержимое
+            dropdown.addItems(self.sensor_directories)  # Добавляем реальные датчики
 
     def open_directory_dialog(self):
         """
@@ -62,8 +77,9 @@ class SensorMonitor(QMainWindow):
         if directory:
             # Сохраняем выбранный путь в поле ввода
             self.path_input.setText(directory)
+            self.sensor_directories = self.get_sensor_directories(directory)
             # Сохраняем путь в переменную (можно использовать его для дальнейшей работы)
-            return directory
+            self.update_sensor_blocks()
 
     def create_sensor_block(self, sensor_name):
         layout = QHBoxLayout()  # Горизонтальная разметка для датчика и его графика
@@ -73,7 +89,7 @@ class SensorMonitor(QMainWindow):
         sensor_label = QLabel(sensor_name)  # Метка с названием датчика
         sensor_dropdown = QComboBox()  # Выпадающее меню для выбора датчика
 
-        sensor_dropdown.addItems([f"DT0{i + 1}" for i in range(1, 6)])  # Пример списка датчиков
+        self.sensor_dropdowns.append(sensor_dropdown)
         sensor_button = QPushButton("⬇")  # Кнопка для действия с датчиком
 
         sensor_selection_layout.addWidget(sensor_label)
