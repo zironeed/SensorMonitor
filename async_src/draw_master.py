@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QSlider
+    QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QSlider, QFileDialog
 )
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # Используем Matplotlib для встраивания графиков
 from matplotlib.figure import Figure
@@ -32,6 +32,7 @@ class SensorMonitor(QMainWindow):
 
         self.path_input.setPlaceholderText("PATH/TO/DIRS")  # Плейсхолдер для поля ввода
         path_button = QPushButton("Открыть")  # Кнопка для открытия пути (здесь можно добавить логику выбора директории)
+        path_button.clicked.connect(self.open_directory_dialog)    # Привязываем кнопку к функции выбора директории
 
         path_layout.addWidget(self.path_input)
         path_layout.addWidget(path_button)
@@ -50,6 +51,19 @@ class SensorMonitor(QMainWindow):
         # Устанавливаем главное окно
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)  # Устанавливаем основное содержимое
+
+    def open_directory_dialog(self):
+        """
+        Выбор директории с папками датчиков пользователем
+        :return: путь к выбранной директории
+        """
+        directory = QFileDialog.getExistingDirectory(self, "Выберите директорию", "")
+        # Проверяем, что пользователь выбрал директорию
+        if directory:
+            # Сохраняем выбранный путь в поле ввода
+            self.path_input.setText(directory)
+            # Сохраняем путь в переменную (можно использовать его для дальнейшей работы)
+            return directory
 
     def create_sensor_block(self, sensor_name):
         layout = QHBoxLayout()  # Горизонтальная разметка для датчика и его графика
