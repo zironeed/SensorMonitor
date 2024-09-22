@@ -9,6 +9,9 @@ from matplotlib.figure import Figure
 import numpy as np  # Библиотека для работы с массивами данных и генерации случайных чисел
 from PyQt5.QtCore import Qt  # Модуль для работы с базовыми типами и событиями
 
+from async_src.file_processor import FileProcessorThread
+
+
 class SensorMonitor(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -50,6 +53,11 @@ class SensorMonitor(QMainWindow):
 
         main_layout.addLayout(sensors_layout)
 
+        # Кнопка старта мониторинга
+        self.monitor_button = QPushButton("Start Monitoring")
+        self.monitor_button.clicked.connect(self.start_file_monitoring)
+        main_layout.addWidget(self.monitor_button)
+
         # Устанавливаем главное окно
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)  # Устанавливаем основное содержимое
@@ -60,7 +68,8 @@ class SensorMonitor(QMainWindow):
         :param directory: общая директория
         :return: список названий директорий
         """
-        return [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
+        self.sensor_directories = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
+        return self.sensor_directories
 
     def update_sensor_blocks(self):
         for dropdown in self.sensor_dropdowns:
@@ -172,9 +181,13 @@ class SensorMonitor(QMainWindow):
             ax.set_xlim([0, zoom_value])  # Изменяем масштаб по оси X
             graph.draw()  # Обновляем график
 
+    def start_file_monitoring(self):
+        path_to_dirs = self.path_input.text()
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)  # Стандартное создание приложения PyQt
-    window = SensorMonitor()  # Создаем экземпляр класса
-    window.show()  # Отображаем главное окно
-    sys.exit(app.exec_())  # Запускаем цикл приложения
+        if path_to_dirs:
+            # Start the file processor thread
+            self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
+            self.file_processor_thread.start()
+
+        else:
+            print("Please select a directory first.")
