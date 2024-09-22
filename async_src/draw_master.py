@@ -80,6 +80,7 @@ class SensorMonitor(QMainWindow):
             self.sensor_directories = self.get_sensor_directories(directory)
             # Сохраняем путь в переменную (можно использовать его для дальнейшей работы)
             self.update_sensor_blocks()
+            return directory, self.sensor_directories
 
     def create_sensor_block(self, sensor_name):
         layout = QHBoxLayout()  # Горизонтальная разметка для датчика и его графика

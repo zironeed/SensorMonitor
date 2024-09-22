@@ -2,53 +2,59 @@ import os
 import asyncio
 import aiofiles
 import aiocsv
+from PyQt5.QtCore import QThread, pyqtSignal
 
 
-async def process_file(path_to_files, filename, output_file):
-    """
-    Работа с одним файлом
-    Вывод - данные в output_file
-    """
-    skip_rows = 14
+class FileProcessorThread(QThread):
+    finished = pyqtSignal()
 
-    async with aiofiles.open(os.path.join(path_to_files, filename), 'r') as file:
-        wave, values = [], []
+    def __init__(self, path_to_dirs):
+        super().__init__()
+        self.path_to_dirs = path_to_dirs
+        self.output_file = 'output.txt'
 
-        reader = aiocsv.AsyncReader(file)
-        async for _ in reader:
-            if skip_rows == 0:
-                break
-            skip_rows -= 1
-            await reader.__anext__()
+    async def process_file(self, path_to_dir, filename):
+        """
+        Работа с одним файлом
+        Вывод - данные в файле output.txt
+        path_to_dir: Путь к директории датчика
+        filename: Название файла
+        """
+        skip_rows = 14
 
-        async for row in reader:
-            wave.append((float(row[0]), float(row[1])))
-            values.append(float(row[1].strip()))
+        async with aiofiles.open(os.path.join(path_to_dir, filename), 'r') as file:
+            wave, values = [], []
 
-    async with aiofiles.open(output_file, 'a') as output:
-        await output.write(f"{filename}, {wave[values.index(min(values))]}, {min(values)}\n")
+            reader = aiocsv.AsyncReader(file)
+            async for _ in reader:
+                if skip_rows == 0:
+                    break
+                skip_rows -= 1
+                await reader.__anext__()
 
+            async for row in reader:
+                wave.append((float(row[0]), float(row[1])))
+                values.append(float(row[1].strip()))
 
-async def get_files(my_dir, output_file):
-    """
-    Поиск файлов, передача их на обработку и добавление в processed_files
-    """
-    processed_files = dict()
+        async with aiofiles.open(self.output_file, 'a') as output:
+            await output.write(f"{filename}, {wave[values.index(min(values))]}, {min(values)}\n")
 
-    while True:
-        for filename in os.listdir(my_dir):
-            if filename.lower().endswith('.csv') and not processed_files.get(filename, False):
-                await process_file(my_dir, filename, output_file)
-                processed_files[filename] = True
-        await asyncio.sleep(4)
+    async def get_files(self, sensor_dir):
+        """
+        Поиск файлов, передача их на обработку и добавление в processed_files
+        sensor_dir: Путь к директории датчика
+        """
+        processed_files = dict()
 
+        while True:
+            for filename in os.listdir(sensor_dir):
+                if filename.lower().endswith('.csv') and not processed_files.get(filename, False):
+                    await self.process_file(sensor_dir, filename)
+                    processed_files[filename] = True
+            await asyncio.sleep(4)
 
-async def get_dirs(common_dir):
-    """
-    Поиск папок датчиков в общей папке, передача папки в get_files
-    """
-
-    dt_dirs = [os.path.join(common_dir, d) for d in os.listdir(common_dir)
-               if os.path.isdir(os.path.join(common_dir, d))]
-
-    await asyncio.gather(*[get_files(dt_dir, f'{dt_dir}/output.txt') for dt_dir in dt_dirs])
+    async def get_dirs(self, sensor_dirs):
+        """
+        Передача папок в get_files
+        """
+        await asyncio.gather(*sensor_dirs)
