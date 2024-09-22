@@ -99,10 +99,12 @@ class SensorMonitor(QMainWindow):
         layout.addLayout(sensor_selection_layout)
 
         # 2. Волновой график
+        default_slider_layout = QVBoxLayout()
+
         wave_graph_label = QLabel(f"Волны для {sensor_name}")
         wave_graph = self.create_wave_graph_widget()
-        layout.addWidget(wave_graph_label)
-        layout.addWidget(wave_graph)
+        default_slider_layout.addWidget(wave_graph_label)
+        default_slider_layout.addWidget(wave_graph)
 
         # Новый вертикальный лэйаут для графика и ползунка
         graph_slider_layout = QVBoxLayout()
@@ -122,6 +124,7 @@ class SensorMonitor(QMainWindow):
         graph_slider_layout.addWidget(zoom_slider)  # Правильный метод для добавления ползунка
 
         # Добавляем вертикальный лэйаут (график + ползунок) в горизонтальный основной лэйаут
+        layout.addLayout(default_slider_layout)
         layout.addLayout(graph_slider_layout)
 
         # Добавляем график и ползунок в соответствующие списки для последующего обновления
