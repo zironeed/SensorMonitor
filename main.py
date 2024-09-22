@@ -1,10 +1,15 @@
 import asyncio
-
-from async_src.file_processor import get_dirs
-
-async def main(path_to_dirs):
-    await get_dirs(path_to_dirs)
+import sys
+from PyQt5.QtWidgets import QApplication
+from async_src.draw_master import SensorMonitor
 
 
-if __name__ == '__main__':
-    asyncio.run(main('C:/Users/zeroneed/Desktop/app/sample/'))
+async def main():
+    app = QApplication(sys.argv)
+    window = SensorMonitor()
+    window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
