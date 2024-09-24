@@ -19,9 +19,11 @@ class SensorMonitor(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle('Mr. Sensor Monitor')  # Устанавливаем название окна
+        self.setWindowTitle(f'Mr. Sensor Monitor')  # Устанавливаем название окна
         self.setGeometry(100, 100, 1200, 700)  # Устанавливаем размеры окна
+        self.status_label = QLabel(f"Monitoring status: Stopped")
 
+        self.selected_sensors = ['None', 'None', 'None', 'None']
         self.sensor_dropdowns = []  # Список для хранения всех dropdown меню
 
         self.graphs = []  # Список для хранения графиков минимумов
@@ -30,8 +32,6 @@ class SensorMonitor(QMainWindow):
         self.wave_axes = []
         self.wave_canvas = []
         self.min_canvas = []
-
-        self.selected_sensors = ['None', 'None', 'None', 'None']
 
         self.initUI()  # Инициализация интерфейса
 
@@ -43,6 +43,8 @@ class SensorMonitor(QMainWindow):
         # Главное окно и разметка
         main_widget = QWidget()  # Создаем главное окно
         main_layout = QVBoxLayout()  # Вертикальная разметка для размещения элементов по порядку
+
+        main_layout.addWidget(self.status_label)
 
         # 1. Поле для ввода пути
         path_layout = QHBoxLayout()  # Горизонтальная разметка для строки ввода и кнопки
@@ -66,10 +68,17 @@ class SensorMonitor(QMainWindow):
 
         main_layout.addLayout(sensors_layout)
 
+        button_layout = QHBoxLayout()
+
         # Кнопка старта мониторинга
-        self.monitor_button = QPushButton("Start Monitoring")
-        self.monitor_button.clicked.connect(self.start_file_monitoring)
-        main_layout.addWidget(self.monitor_button)
+        run_button = QPushButton("Start Monitoring")
+        run_button.clicked.connect(self.start_file_monitoring)
+        button_layout.addWidget(run_button)
+
+        stop_button = QPushButton("Stop Monitoring")
+        stop_button.clicked.connect(self.stop_file_monitoring)
+        button_layout.addWidget(stop_button)
+        main_layout.addLayout(button_layout)
 
         # Устанавливаем главное окно
         main_widget.setLayout(main_layout)
@@ -152,10 +161,17 @@ class SensorMonitor(QMainWindow):
         path_to_dirs = self.path_input.text()
 
         if path_to_dirs:
-            # Start the file processor thread
+            self.status_label.setText("Monitoring status: Running")
             self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
             self.file_processor_thread.start()
             self.update_timer.start(self.update_interval)  # Запускаем таймер
+
+    def stop_file_monitoring(self):
+        try:
+            self.status_label.setText("Monitoring status: Stopped")
+            self.file_processor_thread.stop()
+        except AttributeError:
+            print('Error: File processor thread is not running')
 
     def create_graph_widget(self):
         # Используем Matplotlib для создания графиков минимумов
