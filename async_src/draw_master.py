@@ -1,5 +1,6 @@
 import os
 import sys
+from copy import copy
 
 import aiofiles
 from PyQt5.QtWidgets import (
@@ -26,7 +27,11 @@ class SensorMonitor(QMainWindow):
         self.graphs = []  # Список для хранения графиков минимумов
         self.wave_graphs = []  # Список для хранения волновых графиков
         self.sliders = []  # Список для ползунков, чтобы связать их с графиками
-        self.selected_sensors = ['DT01', 'DT01', 'DT01', 'DT01']
+        self.min_axes = []
+        self.wave_axes = []
+        self.selected_sensors = ['None', 'None', 'None', 'None']
+        self.wave_canvas = []
+        self.min_canvas = []
 
         self.graph_manager = GraphManager()
         self.max_graphs = 100  # Максимальное количество графиков
@@ -169,22 +174,28 @@ class SensorMonitor(QMainWindow):
     def create_graph_widget(self):
         # Используем Matplotlib для создания графиков минимумов
         figure = Figure(figsize=(5, 2))  # Задаем размер графика
-        self.min_canvas = FigureCanvas(figure)  # Контейнер для графика
-        self.min_ax = figure.add_subplot(111)  # Добавляем ось для построения графика
+        min_canvas = FigureCanvas(figure)  # Контейнер для графика
+        ax = figure.add_subplot(111)  # Добавляем ось для построения графика
 
-        return self.min_canvas  # Возвращаем график
+        self.min_axes.append(ax)
+        self.min_canvas.append(min_canvas)
+
+        return min_canvas  # Возвращаем график
 
     def create_wave_graph_widget(self):
         # Виджет для волнового графика
 
         # Используем Matplotlib для создания волновых графиков
         figure = Figure(figsize=(5, 2))  # Размер волнового графика
-        self.wave_canvas = FigureCanvas(figure)  # Контейнер для графика
-        self.wave_ax = figure.add_subplot(111)
+        wave_canvas = FigureCanvas(figure)  # Контейнер для графика
+        ax = figure.add_subplot(111)
 
-        return self.wave_canvas  # Возвращаем график
+        self.wave_axes.append(ax)
+        self.wave_canvas.append(wave_canvas)
 
-    def update_graphs(self, sensor):
+        return wave_canvas  # Возвращаем график
+
+    def update_graphs(self, sensor, block_index):
         """
         Обновление графиков
         """
@@ -194,11 +205,16 @@ class SensorMonitor(QMainWindow):
             print('Error: no file processor thread. Launch monitoring first')
             return
 
-        self.wave_ax.plot(waves, values, color='b')  # Добавляем новый волновой график
-        self.wave_canvas.draw()
+        wave_ax = self.wave_axes[block_index]
+        wave_ax.clear()
+        wave_ax.plot(waves, values, color='b')
+        self.wave_canvas[block_index].draw()
 
-        self.min_ax.plot(dates, min_vals, color='b')  # Добавляем новый график на существующую ось
-        self.min_canvas.draw()  # Обновляем холст
+        # Обновляем график минимумов для конкретного блока
+        min_ax = self.min_axes[block_index]
+        min_ax.clear()
+        min_ax.plot(dates, min_vals, color='b')
+        self.min_canvas[block_index].draw()
 
     def on_sensor_selection_changed(self):
         """
@@ -208,11 +224,10 @@ class SensorMonitor(QMainWindow):
         for sensor in range(len(self.selected_sensors)):
             try:
                 if self.selected_sensors[sensor] != selected_sensors[sensor]:
-                    self.update_graphs(selected_sensors[sensor])
-            except IndexError:
-                print('Error: not enough selected sensors')
+                    self.update_graphs(selected_sensors[sensor], sensor)
+            except IndexError as e:
+                print(e)
         self.selected_sensors = selected_sensors
-        print("Выбранные датчики:", selected_sensors)
 
     def get_selected_sensors(self):
         """
