@@ -1,5 +1,7 @@
 import os
 import sys
+
+import aiofiles
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QSlider, QFileDialog
@@ -10,6 +12,7 @@ import numpy as np  # Библиотека для работы с массива
 from PyQt5.QtCore import Qt  # Модуль для работы с базовыми типами и событиями
 
 from async_src.file_processor import FileProcessorThread
+from async_src.graph_master import GraphManager
 
 
 class SensorMonitor(QMainWindow):
@@ -23,7 +26,10 @@ class SensorMonitor(QMainWindow):
         self.graphs = []  # Список для хранения графиков минимумов
         self.wave_graphs = []  # Список для хранения волновых графиков
         self.sliders = []  # Список для ползунков, чтобы связать их с графиками
+        self.selected_sensors = ['DT01', 'DT01', 'DT01', 'DT01']
 
+        self.graph_manager = GraphManager()
+        self.max_graphs = 100  # Максимальное количество графиков
         self.initUI()  # Инициализация интерфейса
 
     def initUI(self):
@@ -68,8 +74,7 @@ class SensorMonitor(QMainWindow):
         :param directory: общая директория
         :return: список названий директорий
         """
-        self.sensor_directories = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
-        return self.sensor_directories
+        return [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
 
     def update_sensor_blocks(self):
         for dropdown in self.sensor_dropdowns:
@@ -101,6 +106,8 @@ class SensorMonitor(QMainWindow):
 
         self.sensor_dropdowns.append(sensor_dropdown)
         sensor_button = QPushButton("⬇")  # Кнопка для действия с датчиком
+
+        sensor_dropdown.currentIndexChanged.connect(self.on_sensor_selection_changed)
 
         sensor_selection_layout.addWidget(sensor_label)
         sensor_selection_layout.addWidget(sensor_dropdown)
@@ -143,35 +150,13 @@ class SensorMonitor(QMainWindow):
 
         return layout
 
-    def create_graph_widget(self):
-        # Используем Matplotlib для создания графиков минимумов
-        figure = Figure(figsize=(5, 2))  # Задаем размер графика
-        canvas = FigureCanvas(figure)  # Контейнер для графика
-        ax = figure.add_subplot(111)  # Добавляем ось для построения графика
+    def start_file_monitoring(self):
+        path_to_dirs = self.path_input.text()
 
-        # Пример построения графика минимумов
-        x = np.linspace(0, 10, 100)  # Данные по оси X
-        y = np.random.uniform(-30, -10, size=len(x))  # Случайные данные минимумов по оси Y
-        ax.plot(x, y)  # Построение графика
-
-        return canvas  # Возвращаем график
-
-    def create_wave_graph_widget(self):
-        # Виджет для волнового графика
-
-        # Используем Matplotlib для создания волновых графиков
-        figure = Figure(figsize=(5, 2))  # Размер волнового графика
-        canvas = FigureCanvas(figure)  # Контейнер для графика
-        ax = figure.add_subplot(111)
-
-        # Пример волновой кривой
-        x = np.linspace(0, 10, 100)
-        y = np.sin(x) * np.random.uniform(0.8, 1.2, size=len(x))  # Генерация колебаний
-        ax.plot(x, y)
-
-        self.wave_graphs.append(canvas)  # Сохраняем график для дальнейшего обновления
-
-        return canvas  # Возвращаем график
+        if path_to_dirs:
+            # Start the file processor thread
+            self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
+            self.file_processor_thread.start()
 
     def update_all_graphs_zoom(self):
         # Обновляем масштаб для всех графиков минимумов
@@ -181,13 +166,62 @@ class SensorMonitor(QMainWindow):
             ax.set_xlim([0, zoom_value])  # Изменяем масштаб по оси X
             graph.draw()  # Обновляем график
 
-    def start_file_monitoring(self):
-        path_to_dirs = self.path_input.text()
+    def create_graph_widget(self):
+        # Используем Matplotlib для создания графиков минимумов
+        figure = Figure(figsize=(5, 2))  # Задаем размер графика
+        self.min_canvas = FigureCanvas(figure)  # Контейнер для графика
+        self.min_ax = figure.add_subplot(111)  # Добавляем ось для построения графика
 
-        if path_to_dirs:
-            # Start the file processor thread
-            self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
-            self.file_processor_thread.start()
+        return self.min_canvas  # Возвращаем график
 
-        else:
-            print("Please select a directory first.")
+    def create_wave_graph_widget(self):
+        # Виджет для волнового графика
+
+        # Используем Matplotlib для создания волновых графиков
+        figure = Figure(figsize=(5, 2))  # Размер волнового графика
+        self.wave_canvas = FigureCanvas(figure)  # Контейнер для графика
+        self.wave_ax = figure.add_subplot(111)
+
+        return self.wave_canvas  # Возвращаем график
+
+    def update_graphs(self, sensor):
+        """
+        Обновление графиков
+        """
+        try:
+            waves, values, dates, min_vals = self.file_processor_thread.get_data(sensor)
+        except AttributeError:
+            print('Error: no file processor thread. Launch monitoring first')
+            return
+
+        self.wave_ax.plot(waves, values, color='b')  # Добавляем новый волновой график
+        self.wave_canvas.draw()
+
+        self.min_ax.plot(dates, min_vals, color='b')  # Добавляем новый график на существующую ось
+        self.min_canvas.draw()  # Обновляем холст
+
+    def on_sensor_selection_changed(self):
+        """
+        Метод вызывается при изменении выбранного датчика в любом выпадающем списке.
+        """
+        selected_sensors = self.get_selected_sensors()
+        for sensor in range(len(self.selected_sensors)):
+            try:
+                if self.selected_sensors[sensor] != selected_sensors[sensor]:
+                    self.update_graphs(selected_sensors[sensor])
+            except IndexError:
+                print('Error: not enough selected sensors')
+        self.selected_sensors = selected_sensors
+        print("Выбранные датчики:", selected_sensors)
+
+    def get_selected_sensors(self):
+        """
+        Возвращает список выбранных датчиков из всех выпадающих списков.
+        """
+        selected_sensors = []
+        for dropdown in self.sensor_dropdowns:
+            selected_sensor = dropdown.currentText()  # Получаем текст выбранного элемента
+            if selected_sensor:  # Проверяем, что элемент выбран
+                selected_sensors.append(selected_sensor)
+        return selected_sensors
+
