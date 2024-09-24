@@ -2,6 +2,7 @@ import os
 import asyncio
 import aiofiles
 import aiocsv
+from pathlib import Path
 from datetime import datetime
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -41,7 +42,7 @@ class FileProcessorThread(QThread):
         async with aiofiles.open(os.path.join(path_to_dir, 'min_values.txt'), 'a') as output:
             await output.write(f"{datetime.now().strftime("%Y-%m-%d;%H:%M:%S")} {min(values)}\n")
 
-        async with aiofiles.open(os.path.join(path_to_dir, f'output_{filename}.txt'), 'w') as file:
+        async with aiofiles.open(os.path.join(path_to_dir, f'{filename}_output.txt'), 'w') as file:
             await file.writelines(f'{wave_v} {value_v}\n' for wave_v, value_v in zip(wave, values))
 
     async def get_files(self, sensor_dir):
@@ -65,23 +66,34 @@ class FileProcessorThread(QThread):
         await asyncio.gather(*[self.get_files(os.path.join(self.path_to_dirs, sensor_dir))
                                for sensor_dir in self.sensor_dirs])
 
-    def get_output_files(self, sensor_dir):
-        with open(os.path.join(self.path_to_dirs, sensor_dir, 'output.txt')) as file:
-            lines = file.readlines()
-            waves = [float(line.split()[0]) for line in lines]
-            values = [float(line.split()[1]) for line in lines]
-
+    def get_min_files(self, sensor_dir):
         with open(os.path.join(self.path_to_dirs, sensor_dir, 'min_values.txt')) as file:
             lines = file.readlines()
             dates = [datetime.strptime((line.split()[0]), "%Y-%m-%d;%H:%M:%S") for line in lines]
             min_vals = [float(line.split()[1]) for line in lines]
-        return waves, values, dates, min_vals
+        return dates, min_vals
 
-    def get_data(self, sensor):
+    def get_wave_files(self, sensor_dir):
+        sensor_path = Path(self.path_to_dirs) / sensor_dir
+        for filename in os.listdir(sensor_path):
+            if filename.endswith('output.txt'):
+                with open(os.path.join(self.path_to_dirs, sensor_dir, filename)) as file:
+                    lines = file.readlines()
+                    waves = [float(line.split()[0]) for line in lines]
+                    values = [float(line.split()[1]) for line in lines]
+
+                yield waves, values
+
+    def get_min_data(self, sensor):
         for sensor_dir in self.sensor_dirs:
             if sensor in sensor_dir:
-                waves, values, dates, min_vals = self.get_output_files(sensor_dir)
-                return waves, values, dates, min_vals
+                dates, min_vals = self.get_min_files(sensor_dir)
+                return dates, min_vals
+
+    def get_wave_data(self, sensor):
+        for sensor_dir in self.sensor_dirs:
+            if sensor in sensor_dir:
+                yield from self.get_wave_files(sensor_dir)
 
     def run(self):
         """

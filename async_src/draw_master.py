@@ -13,28 +13,26 @@ import numpy as np  # Библиотека для работы с массива
 from PyQt5.QtCore import Qt  # Модуль для работы с базовыми типами и событиями
 
 from async_src.file_processor import FileProcessorThread
-from async_src.graph_master import GraphManager
 
 
 class SensorMonitor(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle('Sensor Monitor')  # Устанавливаем название окна
+        self.setWindowTitle('Mr. Sensor Monitor')  # Устанавливаем название окна
         self.setGeometry(100, 100, 1200, 700)  # Устанавливаем размеры окна
 
         self.sensor_dropdowns = []  # Список для хранения всех dropdown меню
+
         self.graphs = []  # Список для хранения графиков минимумов
         self.wave_graphs = []  # Список для хранения волновых графиков
-        self.sliders = []  # Список для ползунков, чтобы связать их с графиками
         self.min_axes = []
         self.wave_axes = []
-        self.selected_sensors = ['None', 'None', 'None', 'None']
         self.wave_canvas = []
         self.min_canvas = []
 
-        self.graph_manager = GraphManager()
-        self.max_graphs = 100  # Максимальное количество графиков
+        self.selected_sensors = ['None', 'None', 'None', 'None']
+
         self.initUI()  # Инициализация интерфейса
 
     def initUI(self):
@@ -137,21 +135,12 @@ class SensorMonitor(QMainWindow):
         graph_slider_layout.addWidget(min_graph_label)
         graph_slider_layout.addWidget(min_graph)
 
-        # 4. Ползунок для масштабирования графика
-        zoom_slider = QSlider(Qt.Horizontal)  # Ползунок горизонтальный
-        zoom_slider.setMinimum(1)
-        zoom_slider.setMaximum(100)
-        zoom_slider.setValue(10)  # Устанавливаем начальное значение масштаба
-        zoom_slider.valueChanged.connect(self.update_all_graphs_zoom)  # Подключаем ползунок к изменению масштаба графиков
-        graph_slider_layout.addWidget(zoom_slider)  # Правильный метод для добавления ползунка
-
         # Добавляем вертикальный лэйаут (график + ползунок) в горизонтальный основной лэйаут
         layout.addLayout(default_slider_layout)
         layout.addLayout(graph_slider_layout)
 
         # Добавляем график и ползунок в соответствующие списки для последующего обновления
         self.graphs.append(min_graph)
-        self.sliders.append(zoom_slider)
 
         return layout
 
@@ -163,17 +152,9 @@ class SensorMonitor(QMainWindow):
             self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
             self.file_processor_thread.start()
 
-    def update_all_graphs_zoom(self):
-        # Обновляем масштаб для всех графиков минимумов
-        for graph in self.graphs:
-            zoom_value = self.sliders[self.graphs.index(graph)].value()
-            ax = graph.figure.gca()  # Получаем ось графика
-            ax.set_xlim([0, zoom_value])  # Изменяем масштаб по оси X
-            graph.draw()  # Обновляем график
-
     def create_graph_widget(self):
         # Используем Matplotlib для создания графиков минимумов
-        figure = Figure(figsize=(5, 2))  # Задаем размер графика
+        figure = Figure(figsize=(7, 3))  # Задаем размер графика
         min_canvas = FigureCanvas(figure)  # Контейнер для графика
         ax = figure.add_subplot(111)  # Добавляем ось для построения графика
 
@@ -186,7 +167,7 @@ class SensorMonitor(QMainWindow):
         # Виджет для волнового графика
 
         # Используем Matplotlib для создания волновых графиков
-        figure = Figure(figsize=(5, 2))  # Размер волнового графика
+        figure = Figure(figsize=(7, 3))  # Размер волнового графика
         wave_canvas = FigureCanvas(figure)  # Контейнер для графика
         ax = figure.add_subplot(111)
 
@@ -200,21 +181,25 @@ class SensorMonitor(QMainWindow):
         Обновление графиков
         """
         try:
-            waves, values, dates, min_vals = self.file_processor_thread.get_data(sensor)
+            dates, min_vals = self.file_processor_thread.get_min_data(sensor)
         except AttributeError:
             print('Error: no file processor thread. Launch monitoring first')
             return
 
-        wave_ax = self.wave_axes[block_index]
-        wave_ax.clear()
-        wave_ax.plot(waves, values, color='b')
-        self.wave_canvas[block_index].draw()
-
-        # Обновляем график минимумов для конкретного блока
         min_ax = self.min_axes[block_index]
         min_ax.clear()
-        min_ax.plot(dates, min_vals, color='b')
+        min_ax.plot(dates, min_vals, color='b', marker='o', linestyle='None')
         self.min_canvas[block_index].draw()
+
+        try:
+            wave_ax = self.wave_axes[block_index]
+            wave_ax.clear()
+            for waves, values in self.file_processor_thread.get_wave_data(sensor):
+                wave_ax.plot(waves, values, color='b', linewidth=0.5)
+                self.wave_canvas[block_index].draw()
+        except Exception as e:
+            print(e)
+            return
 
     def on_sensor_selection_changed(self):
         """
