@@ -211,7 +211,7 @@ class SensorMonitor(QMainWindow):
 
         min_ax = self.min_axes[block_index]
         min_ax.clear()
-        min_ax.plot(dates, min_vals, color='b', marker='o', linestyle='None')
+        min_ax.plot(dates, min_vals, color='b', marker='o', linestyle='None', markersize=1)
         self.min_canvas[block_index].draw()
 
         try:
