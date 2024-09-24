@@ -116,7 +116,7 @@ class SensorMonitor(QMainWindow):
         sensor_selection_layout.addWidget(sensor_dropdown)
         sensor_selection_layout.addWidget(sensor_button)
 
-        layout.addLayout(sensor_selection_layout)
+        layout.addLayout(sensor_selection_layout, stretch=1)
 
         # 2. Волновой график
         default_slider_layout = QVBoxLayout()
@@ -124,7 +124,7 @@ class SensorMonitor(QMainWindow):
         wave_graph_label = QLabel(f"Волны для {sensor_name}")
         wave_graph = self.create_wave_graph_widget()
         default_slider_layout.addWidget(wave_graph_label)
-        default_slider_layout.addWidget(wave_graph)
+        default_slider_layout.addWidget(wave_graph, stretch=3)
 
         # Новый вертикальный лэйаут для графика и ползунка
         graph_slider_layout = QVBoxLayout()
@@ -133,7 +133,7 @@ class SensorMonitor(QMainWindow):
         min_graph_label = QLabel(f"Минимумы для {sensor_name}")
         min_graph = self.create_graph_widget()  # Создаем график
         graph_slider_layout.addWidget(min_graph_label)
-        graph_slider_layout.addWidget(min_graph)
+        graph_slider_layout.addWidget(min_graph, stretch=3)
 
         # Добавляем вертикальный лэйаут (график + ползунок) в горизонтальный основной лэйаут
         layout.addLayout(default_slider_layout)
@@ -154,9 +154,10 @@ class SensorMonitor(QMainWindow):
 
     def create_graph_widget(self):
         # Используем Matplotlib для создания графиков минимумов
-        figure = Figure(figsize=(7, 3))  # Задаем размер графика
+        figure = Figure(figsize=(8, 3))  # Задаем размер графика
         min_canvas = FigureCanvas(figure)  # Контейнер для графика
         ax = figure.add_subplot(111)  # Добавляем ось для построения графика
+        figure.subplots_adjust(bottom=0.2)
 
         self.min_axes.append(ax)
         self.min_canvas.append(min_canvas)
@@ -167,9 +168,10 @@ class SensorMonitor(QMainWindow):
         # Виджет для волнового графика
 
         # Используем Matplotlib для создания волновых графиков
-        figure = Figure(figsize=(7, 3))  # Размер волнового графика
+        figure = Figure(figsize=(8, 3))  # Размер волнового графика
         wave_canvas = FigureCanvas(figure)  # Контейнер для графика
         ax = figure.add_subplot(111)
+        figure.subplots_adjust(bottom=0.2)
 
         self.wave_axes.append(ax)
         self.wave_canvas.append(wave_canvas)
