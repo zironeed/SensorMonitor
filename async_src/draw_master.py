@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # Используем Matplotlib для встраивания графиков
 from matplotlib.figure import Figure
 import numpy as np  # Библиотека для работы с массивами данных и генерации случайных чисел
-from PyQt5.QtCore import Qt  # Модуль для работы с базовыми типами и событиями
+from PyQt5.QtCore import Qt, QTimer  # Модуль для работы с базовыми типами и событиями
 
 from async_src.file_processor import FileProcessorThread
 
@@ -34,6 +34,10 @@ class SensorMonitor(QMainWindow):
         self.selected_sensors = ['None', 'None', 'None', 'None']
 
         self.initUI()  # Инициализация интерфейса
+
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.dynamic_update_graphs)  # Подключаем обновление всех графиков
+        self.update_interval = 5000  # Интервал обновления (в миллисекундах)
 
     def initUI(self):
         # Главное окно и разметка
@@ -151,6 +155,7 @@ class SensorMonitor(QMainWindow):
             # Start the file processor thread
             self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
             self.file_processor_thread.start()
+            self.update_timer.start(self.update_interval)  # Запускаем таймер
 
     def create_graph_widget(self):
         # Используем Matplotlib для создания графиков минимумов
@@ -227,3 +232,12 @@ class SensorMonitor(QMainWindow):
                 selected_sensors.append(selected_sensor)
         return selected_sensors
 
+    def dynamic_update_graphs(self):
+        """
+        Метод динамического обновления графиков
+        """
+        for sensor in range(len(self.selected_sensors)):
+            try:
+                self.update_graphs(self.selected_sensors[sensor], sensor)
+            except IndexError as e:
+                print(e)
