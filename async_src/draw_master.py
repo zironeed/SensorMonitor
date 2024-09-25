@@ -1,15 +1,10 @@
 import os
-import sys
-from copy import copy
-
-import aiofiles
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QSlider, QFileDialog
 )
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # Используем Matplotlib для встраивания графиков
 from matplotlib.figure import Figure
-import numpy as np  # Библиотека для работы с массивами данных и генерации случайных чисел
 from PyQt5.QtCore import Qt, QTimer  # Модуль для работы с базовыми типами и событиями
 
 from async_src.file_processor import FileProcessorThread
