@@ -1,11 +1,11 @@
 import os
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QSlider, QFileDialog
+    QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QFileDialog
 )
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # Используем Matplotlib для встраивания графиков
 from matplotlib.figure import Figure
-from PyQt5.QtCore import Qt, QTimer  # Модуль для работы с базовыми типами и событиями
+from PyQt5.QtCore import QTimer  # Модуль для работы с базовыми типами и событиями
 
 from async_src.file_processor import FileProcessorThread
 
@@ -116,13 +116,11 @@ class SensorMonitor(QMainWindow):
         sensor_dropdown = QComboBox()  # Выпадающее меню для выбора датчика
 
         self.sensor_dropdowns.append(sensor_dropdown)
-        sensor_button = QPushButton("⬇")  # Кнопка для действия с датчиком
 
         sensor_dropdown.currentIndexChanged.connect(self.on_sensor_selection_changed)
 
         sensor_selection_layout.addWidget(sensor_label)
         sensor_selection_layout.addWidget(sensor_dropdown)
-        sensor_selection_layout.addWidget(sensor_button)
 
         layout.addLayout(sensor_selection_layout, stretch=1)
 
