@@ -11,6 +11,9 @@ from async_src.file_processor import FileProcessorThread
 
 
 class SensorMonitor(QMainWindow):
+    """
+    Класс для визуализации интерфейса и графиков
+    """
     def __init__(self):
         super().__init__()
 
@@ -35,6 +38,9 @@ class SensorMonitor(QMainWindow):
         self.update_interval = 5000  # Интервал обновления (в миллисекундах)
 
     def initUI(self):
+        """
+        Инициализация интерфейса
+        """
         # Главное окно и разметка
         main_widget = QWidget()  # Создаем главное окно
         main_layout = QVBoxLayout()  # Вертикальная разметка для размещения элементов по порядку
@@ -88,6 +94,9 @@ class SensorMonitor(QMainWindow):
         return [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
 
     def update_sensor_blocks(self):
+        """
+        Обновление выпадающего списка датчиков
+        """
         for dropdown in self.sensor_dropdowns:
             dropdown.clear()  # Очищаем предыдущее содержимое
             dropdown.addItems(self.sensor_directories)  # Добавляем реальные датчики
@@ -108,6 +117,10 @@ class SensorMonitor(QMainWindow):
             return directory, self.sensor_directories
 
     def create_sensor_block(self, sensor_name):
+        """
+        Создание блока для монитора
+        :param sensor_name: имя монитора
+        """
         layout = QHBoxLayout()  # Горизонтальная разметка для датчика и его графика
 
         # Выбор датчика (слева)
@@ -151,6 +164,9 @@ class SensorMonitor(QMainWindow):
         return layout
 
     def start_file_monitoring(self):
+        """
+        Запуск приложения
+        """
         path_to_dirs = self.path_input.text()
 
         if path_to_dirs:
@@ -160,6 +176,9 @@ class SensorMonitor(QMainWindow):
             self.update_timer.start(self.update_interval)  # Запускаем таймер
 
     def stop_file_monitoring(self):
+        """
+        Остановка приложения
+        """
         try:
             self.status_label.setText("Monitoring status: Stopped")
             self.file_processor_thread.stop()
@@ -167,6 +186,10 @@ class SensorMonitor(QMainWindow):
             print('Error: File processor thread is not running')
 
     def create_graph_widget(self):
+        """
+        Создание графика минимумов
+        :return: график минимумов
+        """
         # Используем Matplotlib для создания графиков минимумов
         figure = Figure(figsize=(8, 3))  # Задаем размер графика
         min_canvas = FigureCanvas(figure)  # Контейнер для графика
@@ -179,8 +202,10 @@ class SensorMonitor(QMainWindow):
         return min_canvas  # Возвращаем график
 
     def create_wave_graph_widget(self):
-        # Виджет для волнового графика
-
+        """
+        Создание волнового графика
+        :return: график волн
+        """
         # Используем Matplotlib для создания волновых графиков
         figure = Figure(figsize=(8, 3))  # Размер волнового графика
         wave_canvas = FigureCanvas(figure)  # Контейнер для графика

@@ -8,6 +8,9 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class FileProcessorThread(QThread):
+    """
+    Класс для обработки файлов
+    """
     finished = pyqtSignal()
 
     def __init__(self, path_to_dirs, sensor_dirs):
@@ -67,6 +70,11 @@ class FileProcessorThread(QThread):
                                for sensor_dir in self.sensor_dirs])
 
     def get_min_files(self, sensor_dir):
+        """
+        Получение файлов минимумов
+        :param sensor_dir: папка датчика
+        :return: список дат, список значений минимумов
+        """
         with open(os.path.join(self.path_to_dirs, sensor_dir, 'min_values.txt')) as file:
             lines = file.readlines()
             dates = [datetime.strptime((line.split()[0]), "%Y-%m-%d;%H:%M:%S") for line in lines]
@@ -74,6 +82,11 @@ class FileProcessorThread(QThread):
         return dates, min_vals
 
     def get_wave_files(self, sensor_dir):
+        """
+        Получение файлов с волнами
+        :param sensor_dir: папка датчика
+        :return: спислк волн, спислк значений
+        """
         sensor_path = Path(self.path_to_dirs) / sensor_dir
         for filename in os.listdir(sensor_path):
             if filename.endswith('output.txt'):
@@ -85,12 +98,22 @@ class FileProcessorThread(QThread):
                 yield waves, values
 
     def get_min_data(self, sensor):
+        """
+        Получение значений для графика минимумов
+        :param sensor: имя датчика
+        :return: список дат, список значений минимумов
+        """
         for sensor_dir in self.sensor_dirs:
             if sensor in sensor_dir:
                 dates, min_vals = self.get_min_files(sensor_dir)
                 return dates, min_vals
 
     def get_wave_data(self, sensor):
+        """
+        Получение значений для графика волн
+        :param sensor: имя датчика
+        :return: список волн, список значений
+        """
         for sensor_dir in self.sensor_dirs:
             if sensor in sensor_dir:
                 yield from self.get_wave_files(sensor_dir)
