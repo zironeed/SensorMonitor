@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 from PyQt5.QtCore import QTimer  # Модуль для работы с базовыми типами и событиями
 
 from async_src.file_processor import FileProcessorThread
+from async_src.graph_master import GraphMaster
 
 
 class SensorMonitor(QMainWindow):
@@ -172,6 +173,7 @@ class SensorMonitor(QMainWindow):
         if path_to_dirs:
             self.status_label.setText("Monitoring status: Running")
             self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
+            self.graph_master = GraphMaster(path_to_dirs, self.sensor_directories)
             self.file_processor_thread.start()
             self.update_timer.start(self.update_interval)  # Запускаем таймер
 
@@ -222,7 +224,7 @@ class SensorMonitor(QMainWindow):
         Обновление графиков
         """
         try:
-            dates, min_vals = self.file_processor_thread.get_min_data(sensor)
+            dates, min_vals = self.graph_master.get_min_data(sensor)
         except AttributeError:
             print('Error: no file processor thread. Launch monitoring first')
             return
@@ -235,7 +237,7 @@ class SensorMonitor(QMainWindow):
         try:
             wave_ax = self.wave_axes[block_index]
             wave_ax.clear()
-            for waves, values in self.file_processor_thread.get_wave_data(sensor):
+            for waves, values in self.graph_master.get_wave_data(sensor):
                 wave_ax.plot(waves, values, color='b', linewidth=0.5)
                 self.wave_canvas[block_index].draw()
         except Exception as e:
