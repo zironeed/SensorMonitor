@@ -86,8 +86,3 @@ class FileProcessorThread(QThread):
         """
 
         self.finished.emit()
-
-
-if __name__ == '__main__':
-    processor = FileProcessorThread('C:/Users/zeroneed/Desktop/app/sample', ['DT01', 'DT02', 'DT03', 'DT04'])
-    processor.run()
