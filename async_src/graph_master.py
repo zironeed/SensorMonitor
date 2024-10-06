@@ -60,3 +60,4 @@ class GraphMaster:
         for sensor_dir in self.sensor_dirs:
             if sensor in sensor_dir:
                 yield from self.get_wave_files(sensor_dir)
+                break
