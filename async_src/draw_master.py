@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QFileDialog
+    QLineEdit, QPushButton, QLabel, QComboBox, QGridLayout, QFileDialog, QMessageBox
 )
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # Используем Matplotlib для встраивания графиков
 from matplotlib.figure import Figure
@@ -185,7 +185,7 @@ class SensorMonitor(QMainWindow):
             self.status_label.setText("Monitoring status: Stopped")
             self.file_processor_thread.stop()
         except AttributeError:
-            print('Error: File processor thread is not running')
+            self.show_error_message('File processor thread is not running')
 
     def create_graph_widget(self):
         """
@@ -277,3 +277,16 @@ class SensorMonitor(QMainWindow):
                 self.update_graphs(self.selected_sensors[sensor], sensor)
             except IndexError as e:
                 print(e)
+
+    @staticmethod
+    def show_error_message(error_message):
+        """
+        Показать диалоговое окно с сообщением об ошибке.
+        :param error_message: текст ошибки
+        """
+        error_dialog = QMessageBox()
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setWindowTitle("Error")
+        error_dialog.setInformativeText(error_message)
+        error_dialog.setStandardButtons(QMessageBox.Ok)
+        error_dialog.exec_()
