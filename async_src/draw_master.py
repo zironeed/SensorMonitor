@@ -9,6 +9,7 @@ from PyQt5.QtCore import QTimer  # Модуль для работы с базо�
 
 from async_src.file_processor import FileProcessorThread
 from async_src.graph_master import GraphMaster
+from async_src.garbage_collector import GarbageCollectorThread
 
 
 class SensorMonitor(QMainWindow):
@@ -173,8 +174,10 @@ class SensorMonitor(QMainWindow):
         if path_to_dirs:
             self.status_label.setText("Monitoring status: Running")
             self.file_processor_thread = FileProcessorThread(path_to_dirs, self.sensor_directories)
+            self.garbage_collector_thread = GarbageCollectorThread(path_to_dirs, self.sensor_directories)
             self.graph_master = GraphMaster(path_to_dirs, self.sensor_directories)
             self.file_processor_thread.start()
+            self.garbage_collector_thread.start()
             self.update_timer.start(self.update_interval)  # Запускаем таймер
 
     def stop_file_monitoring(self):
@@ -184,6 +187,7 @@ class SensorMonitor(QMainWindow):
         try:
             self.status_label.setText("Monitoring status: Stopped")
             self.file_processor_thread.stop()
+            self.garbage_collector_thread.stop()
         except AttributeError:
             self.show_error_message('File processor thread is not running')
 
@@ -282,7 +286,7 @@ class SensorMonitor(QMainWindow):
     def show_error_message(error_message):
         """
         Показать диалоговое окно с сообщением об ошибке.
-        :param error_message: текст ошибки
+        :param error_message: Текст ошибки
         """
         error_dialog = QMessageBox()
         error_dialog.setIcon(QMessageBox.Critical)

@@ -42,7 +42,7 @@ class FileProcessorThread(QThread):
                 values.append(float(row[1].strip()))
 
         async with aiofiles.open(os.path.join(path_to_dir, 'min_values.txt'), 'a') as output:
-            await output.write(f"{datetime.now().strftime("%Y-%m-%d;%H:%M:%S")} {min(values)}\n")
+            await output.write(f"{datetime.now().strftime("%Y-%m-%d;%H:%M:%S")} {wave[values.index(min(values))]}\n")
 
         async with aiofiles.open(os.path.join(path_to_dir, f'{filename}_{self.output_file}'), 'w') as file:
             await file.writelines(f'{wave_v} {value_v}\n' for wave_v, value_v in zip(wave, values))
